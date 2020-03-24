@@ -44,6 +44,10 @@ class DataFile():
 
 	# ----------------------------------------------------------------------------------------------
 	def __repr__(self):
+		return f"<{__class__.__name__}: {self.filePath.name}>"
+
+	# ----------------------------------------------------------------------------------------------
+	def __str__(self):
 		return textwrap.dedent(f"""
 		{self.filePath.name}
 		  Version: {self.version}
