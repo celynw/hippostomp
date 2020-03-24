@@ -3,6 +3,7 @@ import colored_traceback.auto
 import argparse
 from pathlib import Path
 from tqdm import tqdm
+from PIL import Image
 
 from kellog import debug, info, warning, error
 
@@ -113,6 +114,64 @@ class DataFile():
 				debug(f"  imgType: {imgType}")
 				debug(f"  flags: {flags}")
 				debug(f"  bitmap_id: {bitmap_id}")
+
+				image = b""
+				with open(self.filePath.with_suffix(".555"), "rb") as f2:
+					data_length = length + alpha_length
+					if data_length <= 0:
+						error(f"Data length invalid: {data_length}")
+						continue
+					f2.seek(offset - flags[0])
+					buffer = b""
+					for byte in range(data_length):
+						buffer += f2.read(1)
+					# data_read = int.from_bytes(f2.read(1), byteorder="little") # Somehow externals have 1 byte added to their offset
+					# if (data_length != data_read):
+					# 	if (data_read + 4 == data_length) and (f2.eof()):
+					# 		# Exception for some C3 graphics: last image is 'missing' 4 bytes
+					# 		warning("Not implemented")
+					# 		# buffer[data_read] = buffer[data_read+1] = 0;
+					# 		# buffer[data_read+2] = buffer[data_read+3] = 0;
+					# debug(data_read)
+					# debug(len(buffer))
+
+				if imgType in [0, 1, 10, 12, 13]:
+					print("Plain")
+					i = 0
+					for y in range(width):
+						for x in range(height):
+							pixel = self.set555Pixel(buffer[i] | (buffer[i + 1] << 8), width)
+							image += pixel.to_bytes(4, "little")
+							i += 2
+					image = Image.frombuffer("RGBA", (width, height), image, "raw")
+					# image.show()
+				elif imgType == 30:
+					print("Isometric")
+					warning(f"Not implemented: {imgType}")
+					continue
+				elif imgType in [256, 257, 276]:
+					print("Sprite")
+					warning(f"Not implemented: {imgType}")
+					continue
+				else:
+					raise ValueError(f"Unknown type: {imgType}")
+
+	# ----------------------------------------------------------------------------------------------
+	def set555Pixel(self, colour, width):
+		rgba = 0xff000000
+		if colour == 0xf81f:
+			return rgba
+
+		# Red: 11-15 -> 4-8 | 13-15 -> 1-3
+		rgba |= ((colour & 0x7c00) >> 7) | ((colour & 0x7000) >> 12)
+		# Green: 6-10 -> 12-16 | 8-10 -> 9-11
+		rgba |= ((colour & 0x3e0) << 6) | ((colour & 0x380) << 1) # 0x300
+		# Blue: 1-5 -> 20-24 | 3-5 -> 17-19
+		rgba |= ((colour & 0x1f) << 19) | ((colour & 0x1c) << 14)
+
+		return rgba
+
+
 # ==================================================================================================
 def main(args):
 	filePath = args.root_dir / "Data" / "AbuSimbel.sg3"
