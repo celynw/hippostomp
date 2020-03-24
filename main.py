@@ -14,6 +14,8 @@ class DataFile():
 		self.offset = 0
 
 		self.read_header()
+		self.read_bitmaps()
+
 	# ----------------------------------------------------------------------------------------------
 	def read_header(self):
 		with open(self.filePath, "rb") as f:
@@ -32,6 +34,33 @@ class DataFile():
 
 		info(f"# bitmaps: {self.numBitmapRecords}")
 		info(f"# images: {self.numImageRecords}")
+	# ----------------------------------------------------------------------------------------------
+	def read_bitmaps(self):
+		with open(self.filePath, "rb") as f:
+			f.seek(self.offset)
+			for bitmap in range(self.numBitmapRecords):
+				filename = f.read(65).rstrip(b"\x00").decode("ascii")
+				comment = f.read(51).rstrip(b"\x00").decode("ascii")
+
+				width = int.from_bytes(f.read(4), byteorder="little")
+				height = int.from_bytes(f.read(4), byteorder="little")
+				numImages = int.from_bytes(f.read(4), byteorder="little")
+				startIndex = int.from_bytes(f.read(4), byteorder="little")
+				endIndex = int.from_bytes(f.read(4), byteorder="little")
+
+				debug(f"BITMAP {bitmap}:")
+				debug(f"  filename: {filename}")
+				debug(f"  comment: {comment}")
+				debug(f"  width: {width}")
+				debug(f"  height: {height}")
+				debug(f"  numImages: {numImages}")
+				debug(f"  startIndex: {startIndex}")
+				debug(f"  endIndex: {endIndex}")
+
+				f.seek(64, 1)
+				self.offset = f.tell()
+
+
 # ==================================================================================================
 def main(args):
 	filePath = args.root_dir / "Data" / "AbuSimbel.sg3"
