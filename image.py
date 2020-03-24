@@ -58,6 +58,10 @@ class Image():
 		Image #{self.bitmap_id} ({self.width}x{self.height})
 		""").strip()
 
+	# ----------------------------------------------------------------------------------------------
+	@property
+	def shape(self):
+		return (self.width, self.height)
 
 	# ----------------------------------------------------------------------------------------------
 	def show(self):
