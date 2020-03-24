@@ -97,25 +97,14 @@ class Image():
 	def read_image(self):
 		with open(self.filePath, "rb") as f:
 			f.seek(self.offset)
-			# debug(f"  offset: {self.offset}")
-			# debug(f"  offset555: {self.offset555}")
-			# debug(f"  length: {self.length}")
-			# debug(f"  uncompressed_length: {self.uncompressed_length}")
-			# debug(f"  invert_offset: {self.invert_offset}")
-			# debug(f"  imgType: {self.imgType}")
-			# debug(f"  flags: {self.flags}")
-			# debug(f"  bitmap_id: {self.bitmap_id}")
-
-			image = b""
+			image = [(0, 0, 0, 0)] * self.width * self.height
 			with open(self.filePath.with_suffix(".555"), "rb") as f2:
 				data_length = self.length + self.alpha_length
 				if data_length <= 0:
 					error(f"Data length invalid: {data_length}")
 					return None
 				f2.seek(self.offset555 - self.flags[0])
-				buffer = b""
-				for byte in range(data_length):
-					buffer += f2.read(1)
+				buffer = f2.read(data_length)
 				# data_read = int.from_bytes(f2.read(1), byteorder="little") # Somehow externals have 1 byte added to their offset
 				# if (data_length != data_read):
 				# 	if (data_read + 4 == data_length) and (f2.eof()):
@@ -126,14 +115,14 @@ class Image():
 				# debug(data_read)
 				# debug(len(buffer))
 
+			self.image = PILImage.new("RGBA", (self.width, self.height))
 			if self.imgType == ImgType.plain:
 				i = 0
 				for y in range(self.width):
 					for x in range(self.height):
 						pixel = self.set555Pixel(buffer[i] | (buffer[i + 1] << 8), self.width)
-						image += pixel.to_bytes(4, "little")
+						image[(y * self.width) + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
 						i += 2
-				self.image = PILImage.frombuffer("RGBA", (self.width, self.height), image, "raw")
 			elif self.imgType == ImgType.isometric:
 				size = self.flags[3]
 				height = int((self.width + 2) / 2) # 58 -> 30, 118 -> 60, etc.
@@ -143,9 +132,9 @@ class Image():
 					# Note that this causes a problem with 4x4 regular vs 3x3 large:
 					# 4 * 30 = 120; 3 * 40 = 120 -- give precedence to regular
 					if height % self.isometricTileHeight == 0:
-						size = height / self.isometricTileHeight
+						size = int(height / self.isometricTileHeight)
 					elif height % self.isometricLargeTileHeight == 0:
-						size = height / self.isometricLargeTileHeight
+						size = int(height / self.isometricLargeTileHeight)
 
 				# Determine whether we should use the regular or large (emperor) tiles
 				if self.isometricTileHeight * size == height:
@@ -170,7 +159,7 @@ class Image():
 					x_offset = size - y - 1 if y < size else y - size + 1
 					x_offset *= tileHeight
 					wd = y + 1 if y < size else 2 * size - y - 1
-					for x in range(wd):
+					for wdx in range(wd):
 						halfHeight = int(tileHeight / 2)
 						x, y, i = 0, 0, 0
 						for y in range(halfHeight):
@@ -178,27 +167,25 @@ class Image():
 							end = tileWidth - start
 							for x in range(start, end):
 								pixel = self.set555Pixel((buffer[i + 1] << 8) | buffer[i], wd)
-								image += pixel.to_bytes(4, "little")
+								image[(y * self.width) + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
 								i += 2
 						for y in range(halfHeight, tileHeight):
 							start = 2 * y - tileHeight
 							end = tileWidth - start
 							for x in range(start, end):
 								pixel = self.set555Pixel((buffer[i + 1] << 8) | buffer[i], wd)
-								image += pixel.to_bytes(4, "little")
+								image[(y * self.width) + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
 								i += 2
 						x_offset += tileWidth + 2
 						i += 1
 					y_offset += int(tileHeight / 2)
 				i, x, y = 0, 0, 0
 				while i < self.length:
-					c = buffer[i] # uint8_t
+					c = buffer[i]
 					i += 1
 					if c == 255:
 						# The next byte is the number of pixels to skip
 						x += buffer[i]
-						for skip in range(buffer[i]):
-							image += 0x00000000.to_bytes(4, "little")
 						i += 1
 						while (x >= self.width):
 							y += 1
@@ -207,13 +194,12 @@ class Image():
 						# c is the number of image data bytes
 						for j in range(c):
 							pixel = self.set555Pixel(buffer[i] | (buffer[i + 1] << 8), self.width)
-							image += pixel.to_bytes(4, "little")
+							image[(y * self.width) + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
 							x += 1
 							if x >= self.width:
 								y += 1
 								x = 0
 							i += 2
-				self.image = PILImage.frombuffer("RGBA", (self.width, self.height), image, "raw")
 			elif self.imgType == ImgType.sprite:
 				i, x, y = 0, 0, 0
 				while i < self.length:
@@ -222,8 +208,6 @@ class Image():
 					if c == 255:
 						# The next byte is the number of pixels to skip
 						x += buffer[i]
-						for skip in range(buffer[i]):
-							image += 0x00000000.to_bytes(4, "little")
 						i += 1
 						while (x >= self.width):
 							y += 1
@@ -232,13 +216,13 @@ class Image():
 						# c is the number of image data bytes
 						for j in range(c):
 							pixel = self.set555Pixel(buffer[i] | (buffer[i + 1] << 8), self.width)
-							image += pixel.to_bytes(4, "little")
+							image[(y * self.width) + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
 							x += 1
 							if x >= self.width:
 								y += 1
 								x = 0
 							i += 2
-				self.image = PILImage.frombuffer("RGBA", (self.width, self.height), image, "raw")
+			self.image.putdata(image)
 
 	# ----------------------------------------------------------------------------------------------
 	def set555Pixel(self, colour, width):
