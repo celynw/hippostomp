@@ -3,8 +3,34 @@ import colored_traceback.auto
 from tqdm import tqdm
 from PIL import Image as PILImage
 import textwrap
+from enum import Enum
 
 from kellog import debug, info, warning, error
+
+# ==================================================================================================
+class ImgType(Enum):
+	unknown = 0
+	plain = 1
+	isometric = 2
+	sprite = 3
+	# ----------------------------------------------------------------------------------------------
+	def __str__(self):
+		return self.name.capitalize()
+
+
+types = {
+	ImgType.plain: [0, 1, 10, 12, 13],
+	ImgType.isometric: [30],
+	ImgType.sprite: [256, 257, 276],
+}
+# ==================================================================================================
+def get_img_type(imgType):
+	for k, v in types.items():
+		if imgType in v:
+			return k
+	# raise ValueError(f"Unknown type: {imgType}")
+	error(f"Unknown type: {imgType}")
+	return ImgType.unknown
 
 
 # ==================================================================================================
@@ -35,7 +61,7 @@ class Image():
 			self.width = int.from_bytes(f.read(2), byteorder="little", signed=True)
 			self.height = int.from_bytes(f.read(2), byteorder="little", signed=True)
 			f.seek(26, 1)
-			self.imgType = int.from_bytes(f.read(2), byteorder="little")
+			self.imgType = get_img_type(int.from_bytes(f.read(2), byteorder="little"))
 			self.flags = f.read(4)
 			self.bitmap_id = int.from_bytes(f.read(1), byteorder="little")
 			f.seek(7, 1)
@@ -50,7 +76,7 @@ class Image():
 
 	# ----------------------------------------------------------------------------------------------
 	def __repr__(self):
-		return f"<{__class__.__name__}: {self.width}x{self.height}>"
+		return f"<{__class__.__name__}: {self.imgType} {self.width}x{self.height}>"
 
 	# ----------------------------------------------------------------------------------------------
 	def __str__(self):
@@ -100,9 +126,7 @@ class Image():
 				# debug(data_read)
 				# debug(len(buffer))
 
-			if self.imgType in [0, 1, 10, 12, 13]:
-				print("Plain")
-				# return None
+			if self.imgType == ImgType.plain:
 				i = 0
 				for y in range(self.width):
 					for x in range(self.height):
@@ -110,8 +134,7 @@ class Image():
 						image += pixel.to_bytes(4, "little")
 						i += 2
 				self.image = PILImage.frombuffer("RGBA", (self.width, self.height), image, "raw")
-			elif self.imgType == 30:
-				print("Isometric")
+			elif self.imgType == ImgType.isometric:
 				size = self.flags[3]
 				height = int((self.width + 2) / 2) # 58 -> 30, 118 -> 60, etc.
 				y_offset = self.height - height
@@ -191,9 +214,7 @@ class Image():
 								x = 0
 							i += 2
 				self.image = PILImage.frombuffer("RGBA", (self.width, self.height), image, "raw")
-			elif self.imgType in [256, 257, 276]:
-				print("Sprite")
-				# return None
+			elif self.imgType == ImgType.sprite:
 				i, x, y = 0, 0, 0
 				while i < self.length:
 					c = buffer[i] # uint8_t
@@ -218,8 +239,6 @@ class Image():
 								x = 0
 							i += 2
 				self.image = PILImage.frombuffer("RGBA", (self.width, self.height), image, "raw")
-			else:
-				raise ValueError(f"Unknown type: {imgType}")
 
 	# ----------------------------------------------------------------------------------------------
 	def set555Pixel(self, colour, width):
