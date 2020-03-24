@@ -12,6 +12,12 @@ from kellog import debug, info, warning, error
 class DataFile():
 	headerSize = 680
 	bitmapRecordSize = 200
+	isometricTileWidth = 58
+	isometricTileHeight = 30
+	isometricTileBytes = 1800
+	isometricLargeTileWidth = 78
+	isometricLargeTileHeight = 40
+	isometricLargeTileBytes = 3200
 	# ----------------------------------------------------------------------------------------------
 	def __init__(self, filePath):
 		self.filePath = filePath
@@ -155,8 +161,63 @@ class DataFile():
 					# image.show()
 				elif imgType == 30:
 					print("Isometric")
-					warning(f"Not implemented: {imgType}")
-					continue
+					size = flags[3]
+					if size == 0:
+						# Derive the tile size from the height (more regular than width)
+						# Note that this causes a problem with 4x4 regular vs 3x3 large:
+						# 4 * 30 = 120; 3 * 40 = 120 -- give precedence to regular
+						if height % self.isometricTileHeight == 0:
+							size = height / self.isometricTileHeight
+						elif height % self.isometricLargeTileHeight == 0:
+							size = height / self.isometricLargeTileHeight
+
+					# Determine whether we should use the regular or large (emperor) tiles
+					if self.isometricTileHeight * size == height:
+						tileBytes = self.isometricTileBytes
+						tileHeight = self.isometricTileHeight
+						tileWidth = self.isometricTileWidth
+					elif self.isometricLargeTileHeight * size == height:
+						tileBytes = self.isometricLargeTileBytes
+						tileHeight = self.isometricLargeTileHeight
+						tileWidth = self.isometricLargeTileWidth
+					else:
+						error("Unknown tile size")
+						continue
+
+					# Check if buffer length is enough: (width + 2) * height / 2 * 2bpp */
+					if (width + 2) * height != uncompressed_length:
+						error("Data length doesn't match footprint size")
+						continue
+
+					i = 0
+					for y in range(size + (size - 1)):
+						x_offset = size - y - 1 if y < size else y - size + 1
+						x_offset *= tileHeight
+						wd = y + 1 if y < size else 2 * size - y - 1
+						for x in range(wd):
+							# writeIsometricTile(img, pixels, &buffer[i * tileBytes], x_offset, y_offset, tileWidth, tileHeight)
+
+							halfHeight = tileHeight / 2
+							x, y, i = 0, 0, 0
+							for y in range(halfHeight):
+								start = tileHeight - 2 * (y + 1)
+								end = tileWidth - start
+								for x in range(start, end):
+									pixel = self.set555Pixel((buffer[i + 1] << 8) | buffer[i], wd)
+									image += pixel.to_bytes(4, "little")
+									i += 2
+							for y in range(halfHeight, tileHeight):
+								start = 2 * y - tileHeight
+								end = tileWidth - start
+								for x in range(start, end):
+									pixel = self.set555Pixel((buffer[i + 1] << 8) | buffer[i], wd)
+									image += pixel.to_bytes(4, "little")
+									i += 2
+							x_offset += tileWidth + 2
+							i += 1
+						y_offset += tileHeight / 2
+						image = Image.frombuffer("RGBA", (width, height), image, "raw")
+						# image.show()
 				elif imgType in [256, 257, 276]:
 					print("Sprite")
 					i, x, y = 0, 0, 0
