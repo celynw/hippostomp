@@ -151,8 +151,31 @@ class DataFile():
 					continue
 				elif imgType in [256, 257, 276]:
 					print("Sprite")
-					warning(f"Not implemented: {imgType}")
-					continue
+					i, x, y = 0, 0, 0
+					while i < length:
+						c = buffer[i] # uint8_t
+						i += 1
+						if c == 255:
+							# The next byte is the number of pixels to skip
+							x += buffer[i]
+							for skip in range(buffer[i]):
+								image += 0x00000000.to_bytes(4, "little")
+							i += 1
+							while (x >= width):
+								y += 1
+								x -= width
+						else:
+							# c is the number of image data bytes
+							for j in range(c):
+								pixel = self.set555Pixel(buffer[i] | (buffer[i + 1] << 8), width)
+								image += pixel.to_bytes(4, "little")
+								x += 1
+								if x >= width:
+									y += 1
+									x = 0
+								i += 2
+					image = Image.frombuffer("RGBA", (width, height), image, "raw")
+					# image.show()
 				else:
 					raise ValueError(f"Unknown type: {imgType}")
 
