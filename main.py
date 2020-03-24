@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 from tqdm import tqdm
 from PIL import Image
+import textwrap
 
 from kellog import debug, info, warning, error
 
@@ -37,8 +38,15 @@ class DataFile():
 			f.seek(self.headerSize)
 			self.offset = f.tell()
 
-		info(f"# bitmaps: {self.numBitmapRecords}")
-		info(f"# images: {self.numImageRecords}")
+	# ----------------------------------------------------------------------------------------------
+	def __repr__(self):
+		return textwrap.dedent(f"""
+		{self.filePath.name}
+		  Version: {self.version}
+		  Filesize: {self.fileSize // 1024} KB
+		  Contains {self.numBitmapRecords} bitmaps, consisting of {self.numImageRecords} images
+		  Image filesize: {self.totalFilesize // 1024} KB ({self.filesize555 // 1024} KB + {self.filesizeExternal // 1024} KB)
+		""").strip()
 
 	# ----------------------------------------------------------------------------------------------
 	def get_max_bitmap_records(self):
