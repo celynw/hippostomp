@@ -10,12 +10,6 @@ from bitmap import Bitmap
 class DataFile():
 	headerSize = 680
 	bitmapRecordSize = 200
-	isometricTileWidth = 58
-	isometricTileHeight = 30
-	isometricTileBytes = 1800
-	isometricLargeTileWidth = 78
-	isometricLargeTileHeight = 40
-	isometricLargeTileBytes = 3200
 	# ----------------------------------------------------------------------------------------------
 	def __init__(self, filePath):
 		self.filePath = filePath
@@ -77,8 +71,8 @@ class DataFile():
 	# ----------------------------------------------------------------------------------------------
 	def read_images(self, includeAlpha: bool):
 		for bitmap in self.bitmaps:
-			bitmap.offset = self.offset
-			bitmap.read_images(includeAlpha)
+			bitmap.read_images(self.offset, self.version)
+			self.offset = bitmap.offset
 
 	# ----------------------------------------------------------------------------------------------
 	def set555Pixel(self, colour, width):
