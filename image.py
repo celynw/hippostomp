@@ -109,21 +109,23 @@ class Image():
 			elif self.imgType == 30:
 				print("Isometric")
 				size = self.flags[3]
+				height = int((self.width + 2) / 2) # 58 -> 30, 118 -> 60, etc.
+				y_offset = self.height - height
 				if size == 0:
 					# Derive the tile size from the height (more regular than width)
 					# Note that this causes a problem with 4x4 regular vs 3x3 large:
 					# 4 * 30 = 120; 3 * 40 = 120 -- give precedence to regular
-					if self.height % self.isometricTileHeight == 0:
-						size = self.height / self.isometricTileHeight
-					elif self.height % self.isometricLargeTileHeight == 0:
-						size = self.height / self.isometricLargeTileHeight
+					if height % self.isometricTileHeight == 0:
+						size = height / self.isometricTileHeight
+					elif height % self.isometricLargeTileHeight == 0:
+						size = height / self.isometricLargeTileHeight
 
 				# Determine whether we should use the regular or large (emperor) tiles
-				if self.isometricTileHeight * size == self.height:
+				if self.isometricTileHeight * size == height:
 					tileBytes = self.isometricTileBytes
 					tileHeight = self.isometricTileHeight
 					tileWidth = self.isometricTileWidth
-				elif self.isometricLargeTileHeight * size == self.height:
+				elif self.isometricLargeTileHeight * size == height:
 					tileBytes = self.isometricLargeTileBytes
 					tileHeight = self.isometricLargeTileHeight
 					tileWidth = self.isometricLargeTileWidth
@@ -132,7 +134,7 @@ class Image():
 					return None
 
 				# Check if buffer length is enough: (width + 2) * height / 2 * 2bpp */
-				if (self.width + 2) * self.height != self.uncompressed_length:
+				if (self.width + 2) * height != self.uncompressed_length:
 					error("Data length doesn't match footprint size")
 					return None
 
@@ -161,6 +163,29 @@ class Image():
 						x_offset += tileWidth + 2
 						i += 1
 					y_offset += int(tileHeight / 2)
+				i, x, y = 0, 0, 0
+				while i < self.length:
+					c = buffer[i] # uint8_t
+					i += 1
+					if c == 255:
+						# The next byte is the number of pixels to skip
+						x += buffer[i]
+						for skip in range(buffer[i]):
+							image += 0x00000000.to_bytes(4, "little")
+						i += 1
+						while (x >= self.width):
+							y += 1
+							x -= self.width
+					else:
+						# c is the number of image data bytes
+						for j in range(c):
+							pixel = self.set555Pixel(buffer[i] | (buffer[i + 1] << 8), self.width)
+							image += pixel.to_bytes(4, "little")
+							x += 1
+							if x >= self.width:
+								y += 1
+								x = 0
+							i += 2
 				self.image = PILImage.frombuffer("RGBA", (self.width, self.height), image, "raw")
 			elif self.imgType in [256, 257, 276]:
 				print("Sprite")
