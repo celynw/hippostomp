@@ -9,19 +9,39 @@ from dataFile import DataFile
 
 # ==================================================================================================
 def main(args):
-	filePath = args.root_dir / "Data" / "AbuSimbel.sg3"
-	info(f"Opening {filePath}...")
+	if args.extract:
+		args.extract.mkdir(exist_ok=True)
+	for filePath in (args.root_dir / "Data").glob("*.sg3"):
+		info(f"Reading from {filePath.name}")
 
-	dataFile = DataFile(filePath)
+		if args.extract:
+			dataDir = (args.extract / filePath.stem)
+			dataDir.mkdir(exist_ok=True)
+		try:
+			dataFile = DataFile(filePath)
+			for bitmap in dataFile.bitmaps:
+				# TODO ignore system
+				if args.extract:
+					bitmapDir = (dataDir / Path(bitmap.filename).stem)
+					bitmapDir.mkdir(exist_ok=True)
+				for i, image in enumerate(bitmap.images):
+					try:
+						image.save(bitmapDir / f"{i}.png")
+					except AttributeError:
+						pass
+		except Exception as e:
+			error(e)
 
 
 # ==================================================================================================
 def parse_args():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("root_dir", metavar="DIRECTORY", help="Location of Pharaoh installation directory")
+	parser.add_argument("extract", metavar="DIRECTORY", help="Extract all images to this location")
 
 	args = parser.parse_args()
 	args.root_dir = Path(args.root_dir)
+	args.extract = Path(args.extract)
 
 	return args
 

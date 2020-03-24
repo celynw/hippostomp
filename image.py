@@ -94,6 +94,10 @@ class Image():
 		self.image.show()
 
 	# ----------------------------------------------------------------------------------------------
+	def save(self, *args, **kwargs):
+		self.image.save(*args, **kwargs)
+
+	# ----------------------------------------------------------------------------------------------
 	def read_image(self):
 		with open(self.filePath, "rb") as f:
 			f.seek(self.offset)
@@ -167,20 +171,20 @@ class Image():
 							end = tileWidth - start
 							for x in range(start, end):
 								pixel = self.set555Pixel((buffer[i + 1] << 8) | buffer[i], wd)
-								image[(y * self.width) + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
+								image[((y + y_offset) * self.width) + x_offset + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
 								i += 2
 						for y in range(halfHeight, tileHeight):
 							start = 2 * y - tileHeight
 							end = tileWidth - start
 							for x in range(start, end):
 								pixel = self.set555Pixel((buffer[i + 1] << 8) | buffer[i], wd)
-								image[(y * self.width) + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
+								image[((y + y_offset) * self.width) + x_offset + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
 								i += 2
 						x_offset += tileWidth + 2
 						i += 1
 					y_offset += int(tileHeight / 2)
-				i, x, y = 0, 0, 0
-				while i < self.length:
+				i, x, y = self.uncompressed_length, 0, 0
+				while i < self.length - self.uncompressed_length:
 					c = buffer[i]
 					i += 1
 					if c == 255:
