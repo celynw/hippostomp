@@ -119,15 +119,7 @@ class Image():
 				data_length = self.length + self.alpha_length
 				f2.seek(self.offset555 - self.flags[0])
 				buffer = f2.read(data_length)
-				# data_read = int.from_bytes(f2.read(1), byteorder="little") # Somehow externals have 1 byte added to their offset
-				# if (data_length != data_read):
-				# 	if (data_read + 4 == data_length) and (f2.eof()):
-				# 		# Exception for some C3 graphics: last image is 'missing' 4 bytes
-				# 		warning("Not implemented")
-				# 		# buffer[data_read] = buffer[data_read+1] = 0;
-				# 		# buffer[data_read+2] = buffer[data_read+3] = 0;
-				# debug(data_read)
-				# debug(len(buffer))
+				# FIX in some C3 graphics, last image is 'missing' final 4 bytes
 
 			self.image = PILImage.new("RGBA", (self.width, self.height))
 			if self.imgType == ImgType.plain:
