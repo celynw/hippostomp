@@ -50,6 +50,6 @@ class Bitmap():
 		self.offset = offset
 		for record in tqdm(range(self.numImages)):
 			image = Image(self.filePath, self.offset, version)
-			if record != 0: # First one is always a dummy record
+			if image and record != 0: # First one is always a dummy record
 				self.images.append(image)
 			self.offset = image.offset
