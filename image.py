@@ -47,7 +47,24 @@ class Image():
 		self.offset = offset
 
 		self.read_header(includeAlpha=version >= 0xd6)
+		if not self.verify():
+			return None
 		self.read_image()
+
+	# ----------------------------------------------------------------------------------------------
+	def __repr__(self):
+		return f"<{__class__.__name__}: {self.imgType} {self.width}x{self.height}>"
+
+	# ----------------------------------------------------------------------------------------------
+	def __str__(self):
+		return textwrap.dedent(f"""
+		Image #{self.bitmap_id} ({self.width}x{self.height})
+		""").strip()
+
+	# ----------------------------------------------------------------------------------------------
+	@property
+	def shape(self):
+		return (self.width, self.height)
 
 	# ----------------------------------------------------------------------------------------------
 	def read_header(self, includeAlpha):
@@ -75,19 +92,15 @@ class Image():
 			self.offset = f.tell()
 
 	# ----------------------------------------------------------------------------------------------
-	def __repr__(self):
-		return f"<{__class__.__name__}: {self.imgType} {self.width}x{self.height}>"
+	def verify(self):
+		if self.width <= 0 or self.height <= 0:
+			error(f"Invalid image dimensions: {self.width}x{self.height}")
+			return False
+		if self.length <= 0:
+			error(f"No image data available: length = {self.length})")
+			return False
 
-	# ----------------------------------------------------------------------------------------------
-	def __str__(self):
-		return textwrap.dedent(f"""
-		Image #{self.bitmap_id} ({self.width}x{self.height})
-		""").strip()
-
-	# ----------------------------------------------------------------------------------------------
-	@property
-	def shape(self):
-		return (self.width, self.height)
+		return True
 
 	# ----------------------------------------------------------------------------------------------
 	def show(self):
@@ -104,9 +117,6 @@ class Image():
 			image = [(0, 0, 0, 0)] * self.width * self.height
 			with open(self.filePath.with_suffix(".555"), "rb") as f2:
 				data_length = self.length + self.alpha_length
-				if data_length <= 0:
-					error(f"Data length invalid: {data_length}")
-					return None
 				f2.seek(self.offset555 - self.flags[0])
 				buffer = f2.read(data_length)
 				# data_read = int.from_bytes(f2.read(1), byteorder="little") # Somehow externals have 1 byte added to their offset
