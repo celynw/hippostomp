@@ -124,8 +124,8 @@ class Image():
 			self.image = PILImage.new("RGBA", (self.width, self.height))
 			if self.imgType == ImgType.plain:
 				i = 0
-				for y in range(self.width):
-					for x in range(self.height):
+				for y in range(self.height):
+					for x in range(self.width):
 						pixel = self.set555Pixel(buffer[i] | (buffer[i + 1] << 8), self.width)
 						image[(y * self.width) + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
 						i += 2
