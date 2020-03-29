@@ -19,7 +19,7 @@ class DataFile():
 		self.read_header()
 		self.read_bitmaps()
 		self.offset = self.headerSize + (self.get_max_bitmap_records() * self.bitmapRecordSize)
-		self.read_images(includeAlpha=self.version >= 0xd6)
+		self.read_images()
 
 	# ----------------------------------------------------------------------------------------------
 	def read_header(self):
@@ -69,9 +69,9 @@ class DataFile():
 			assert(self.bitmaps[-1].endIndex == self.numImageRecords)
 
 	# ----------------------------------------------------------------------------------------------
-	def read_images(self, includeAlpha: bool):
+	def read_images(self):
 		for bitmap in self.bitmaps:
-			bitmap.read_images(self.offset, self.version)
+			bitmap.read_images(self.offset, self.version >= 0xd6)
 			self.offset = bitmap.offset
 
 	# ----------------------------------------------------------------------------------------------

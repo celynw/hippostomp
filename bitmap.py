@@ -46,10 +46,10 @@ class Bitmap():
 		""").strip()
 
 	# ----------------------------------------------------------------------------------------------
-	def read_images(self, offset, version):
+	def read_images(self, offset, includeAlpha):
 		self.offset = offset
 		for record in tqdm(range(self.numImages)):
-			image = Image(self.filePath, self.offset, version)
+			image = Image(self.filePath, self.offset, includeAlpha)
 			if image and record != 0: # First one is always a dummy record
 				self.images.append(image)
 			self.offset = image.offset

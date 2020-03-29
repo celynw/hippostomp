@@ -42,11 +42,12 @@ class Image():
 	isometricLargeTileHeight = 40
 	isometricLargeTileBytes = 3200
 	# ----------------------------------------------------------------------------------------------
-	def __init__(self, filePath, offset, version):
+	def __init__(self, filePath, offset, includeAlpha):
 		self.filePath = filePath
 		self.offset = offset
+		self.includeAlpha = includeAlpha
 
-		self.read_header(includeAlpha=version >= 0xd6)
+		self.read_header()
 		if not self.verify():
 			return None
 		self.read_image()
@@ -67,7 +68,7 @@ class Image():
 		return (self.width, self.height)
 
 	# ----------------------------------------------------------------------------------------------
-	def read_header(self, includeAlpha):
+	def read_header(self):
 		with open(self.filePath, "rb") as f:
 			f.seek(self.offset)
 			self.offset555 = int.from_bytes(f.read(4), byteorder="little")
@@ -83,11 +84,11 @@ class Image():
 			self.bitmap_id = int.from_bytes(f.read(1), byteorder="little")
 			f.seek(7, 1)
 
-			if includeAlpha:
+			if self.includeAlpha:
 				self.alpha_offset = int.from_bytes(f.read(4), byteorder="little")
 				self.alpha_length = int.from_bytes(f.read(4), byteorder="little")
 			else:
-				self.alpha_length = 0
+				self.alpha_offset = self.alpha_length = 0
 
 			self.offset = f.tell()
 
