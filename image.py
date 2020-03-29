@@ -58,7 +58,7 @@ class Image():
 	# ----------------------------------------------------------------------------------------------
 	def __str__(self):
 		return textwrap.dedent(f"""
-		Image #{self.bitmap_id} ({self.width}x{self.height})
+		Image #{self.bitmap_id}: {self.imgType} {self.width}x{self.height}
 		""").strip()
 
 	# ----------------------------------------------------------------------------------------------
