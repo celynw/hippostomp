@@ -36,8 +36,8 @@ def main(args):
 # ==================================================================================================
 def parse_args():
 	parser = argparse.ArgumentParser()
-	parser.add_argument("root_dir", metavar="DIRECTORY", help="Location of Pharaoh installation directory")
-	parser.add_argument("extract", metavar="DIRECTORY", help="Extract all images to this location")
+	parser.add_argument("root_dir", metavar="ROOT_DIR", help="Location of Pharaoh/Cleopatra installation directory")
+	parser.add_argument("extract", metavar="OUTPUT_DIR", help="Extract all images to this location")
 
 	args = parser.parse_args()
 	args.root_dir = Path(args.root_dir)
