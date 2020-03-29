@@ -13,20 +13,17 @@ def main(args):
 	for filePath in dataFiles:
 		info(f"Reading from {filePath.name}")
 		dataDir = (args.extract / filePath.stem)
-		try:
-			dataFile = DataFile(filePath)
-			for bitmap in dataFile.bitmaps:
-				# TODO ignore system
-				if args.extract:
-					bitmapDir = (dataDir / Path(bitmap.filename).stem)
-				for i, image in enumerate(bitmap.images):
-					try:
-						bitmapDir.mkdir(parents=True, exist_ok=True)
-						image.save(bitmapDir / f"{i}.png")
-					except AttributeError:
-						pass
-		except Exception as e:
-			error(e)
+		dataFile = DataFile(filePath)
+		for bitmap in dataFile.bitmaps:
+			# TODO ignore system
+			if args.extract:
+				bitmapDir = (dataDir / Path(bitmap.filename).stem)
+			for i, image in enumerate(bitmap.images):
+				try:
+					bitmapDir.mkdir(parents=True, exist_ok=True)
+					image.save(bitmapDir / f"{i}.png")
+				except AttributeError:
+					pass
 
 
 # ==================================================================================================
