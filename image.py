@@ -233,14 +233,14 @@ class Image():
 
 	# ----------------------------------------------------------------------------------------------
 	def set555Pixel(self, colour, width):
-		rgba = 0xff000000
+		rgba = 0xff000000 # Black
 		if colour == 0xf81f:
-			return rgba
+			return 0x00000000 # Transparent
 
 		# Red: 11-15 -> 4-8 | 13-15 -> 1-3
 		rgba |= ((colour & 0x7c00) >> 7) | ((colour & 0x7000) >> 12)
 		# Green: 6-10 -> 12-16 | 8-10 -> 9-11
-		rgba |= ((colour & 0x3e0) << 6) | ((colour & 0x380) << 1) # 0x300
+		rgba |= ((colour & 0x3e0) << 6) | ((colour & 0x380) << 1) # Was 300
 		# Blue: 1-5 -> 20-24 | 3-5 -> 17-19
 		rgba |= ((colour & 0x1f) << 19) | ((colour & 0x1c) << 14)
 
