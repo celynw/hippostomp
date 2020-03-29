@@ -9,23 +9,19 @@ from dataFile import DataFile
 
 # ==================================================================================================
 def main(args):
-	if args.extract:
-		args.extract.mkdir(exist_ok=True)
-	for filePath in (args.root_dir / "Data").glob("*.sg3"):
+	dataFiles = (args.src / "Data").glob("*.sg3") if args.src.resolve().is_dir() else [args.src]
+	for filePath in dataFiles:
 		info(f"Reading from {filePath.name}")
-
-		if args.extract:
-			dataDir = (args.extract / filePath.stem)
-			dataDir.mkdir(exist_ok=True)
+		dataDir = (args.extract / filePath.stem)
 		try:
 			dataFile = DataFile(filePath)
 			for bitmap in dataFile.bitmaps:
 				# TODO ignore system
 				if args.extract:
 					bitmapDir = (dataDir / Path(bitmap.filename).stem)
-					bitmapDir.mkdir(exist_ok=True)
 				for i, image in enumerate(bitmap.images):
 					try:
+						bitmapDir.mkdir(parents=True, exist_ok=True)
 						image.save(bitmapDir / f"{i}.png")
 					except AttributeError:
 						pass
@@ -36,11 +32,11 @@ def main(args):
 # ==================================================================================================
 def parse_args():
 	parser = argparse.ArgumentParser()
-	parser.add_argument("root_dir", metavar="ROOT_DIR", help="Location of Pharaoh/Cleopatra installation directory")
-	parser.add_argument("extract", metavar="OUTPUT_DIR", help="Extract all images to this location")
+	parser.add_argument("src", metavar="SRC", help="Location of either the Pharaoh/Cleopatra root installation directory, or a specific `.sg3` file")
+	parser.add_argument("extract", metavar="OUT_DIR", help="Extract all images to this location")
 
 	args = parser.parse_args()
-	args.root_dir = Path(args.root_dir)
+	args.src = Path(args.src)
 	args.extract = Path(args.extract)
 
 	return args
