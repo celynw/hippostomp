@@ -73,18 +73,3 @@ class DataFile():
 		for bitmap in self.bitmaps:
 			bitmap.read_images(self.offset, self.version >= 0xd6)
 			self.offset = bitmap.offset
-
-	# ----------------------------------------------------------------------------------------------
-	def set555Pixel(self, colour, width):
-		rgba = 0xff000000
-		if colour == 0xf81f:
-			return rgba
-
-		# Red: 11-15 -> 4-8 | 13-15 -> 1-3
-		rgba |= ((colour & 0x7c00) >> 7) | ((colour & 0x7000) >> 12)
-		# Green: 6-10 -> 12-16 | 8-10 -> 9-11
-		rgba |= ((colour & 0x3e0) << 6) | ((colour & 0x380) << 1) # 0x300
-		# Blue: 1-5 -> 20-24 | 3-5 -> 17-19
-		rgba |= ((colour & 0x1f) << 19) | ((colour & 0x1c) << 14)
-
-		return rgba
