@@ -42,10 +42,11 @@ class Image():
 	isometricLargeTileHeight = 40
 	isometricLargeTileBytes = 3200
 	# ----------------------------------------------------------------------------------------------
-	def __init__(self, filePath, offset, includeAlpha):
+	def __init__(self, filePath, offset, includeAlpha, imgNum):
 		self.filePath = filePath
 		self.offset = offset
 		self.includeAlpha = includeAlpha
+		self.imgNum = imgNum
 
 		self.read_header()
 		if not self.verify():
@@ -59,7 +60,7 @@ class Image():
 	# ----------------------------------------------------------------------------------------------
 	def __str__(self):
 		return textwrap.dedent(f"""
-		Image #{self.bitmap_id}: {self.imgType} {self.width}x{self.height}
+		Bitmap #{self.bitmap_id} Image #{self.imgNum}: {self.imgType} {self.width}x{self.height}
 		""").strip()
 
 	# ----------------------------------------------------------------------------------------------
