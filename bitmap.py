@@ -5,7 +5,7 @@ import textwrap
 
 from kellog import debug, info, warning, error
 
-from image import Image
+from image import Image, ImageError
 
 # ==================================================================================================
 class Bitmap():
@@ -49,7 +49,10 @@ class Bitmap():
 	def read_images(self, offset, includeAlpha):
 		self.offset = offset
 		for i, record in enumerate(tqdm(range(self.numImages))):
-			image = Image(self.filePath, self.offset, includeAlpha, i, isDummy=record != 0) # First is a dummy
-			if image:
-				self.images.append(image)
+			image = Image(self.filePath, self.offset, includeAlpha, i, isDummy=record == 0) # First is a dummy
 			self.offset = image.offset
+			try:
+				image.read_image()
+				self.images.append(image)
+			except ImageError:
+				continue

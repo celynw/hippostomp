@@ -8,6 +8,13 @@ from enum import Enum
 from kellog import debug, info, warning, error
 
 # ==================================================================================================
+class ImageError(Exception):
+	# ----------------------------------------------------------------------------------------------
+	def __init__(self, *args):
+		super().__init__(*args)
+
+
+# ==================================================================================================
 class ImgType(Enum):
 	unknown = 0
 	plain = 1
@@ -47,11 +54,9 @@ class Image():
 		self.offset = offset
 		self.includeAlpha = includeAlpha
 		self.imgNum = imgNum
+		self.isDummy = isDummy
 
 		self.read_header()
-		if not isDummy or not self.verify():
-			return None
-		self.read_image()
 
 	# ----------------------------------------------------------------------------------------------
 	def __repr__(self):
@@ -116,6 +121,9 @@ class Image():
 
 	# ----------------------------------------------------------------------------------------------
 	def read_image(self):
+		if self.isDummy or not self.verify():
+			raise ImageError("Image verification failed")
+
 		image = [(0, 0, 0, 0)] * self.width * self.height
 		with open(self.filePath.with_suffix(".555"), "rb") as f2:
 			data_length = self.length + self.alpha_length
