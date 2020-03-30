@@ -60,15 +60,13 @@ class DataFile():
 
 	# ----------------------------------------------------------------------------------------------
 	def read_bitmaps(self, bitmapIDs):
-		with open(self.filePath, "rb") as f:
-			f.seek(self.offset)
-			for i in range(self.numBitmapRecords):
-				bitmap = Bitmap(self.filePath, self.offset)
-				if bitmap.filename not in bitmapIDs:
-					self.bitmaps.append(bitmap)
-					bitmapIDs.add(bitmap.filename)
-				self.offset = bitmap.offset
-			assert(self.bitmaps[-1].endIndex == self.numImageRecords)
+		for i in range(self.numBitmapRecords):
+			bitmap = Bitmap(self.filePath, self.offset)
+			if bitmap.filename not in bitmapIDs:
+				self.bitmaps.append(bitmap)
+				bitmapIDs.add(bitmap.filename)
+			self.offset = bitmap.offset
+		assert(self.bitmaps[-1].endIndex == self.numImageRecords)
 
 	# ----------------------------------------------------------------------------------------------
 	def read_images(self):
