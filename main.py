@@ -7,6 +7,8 @@ from kellog import debug, info, warning, error
 
 from dataFile import DataFile
 
+from image import ImgType
+
 # ==================================================================================================
 def main(args):
 	dataFiles = (args.src / "Data").glob("*.sg3") if args.src.resolve().is_dir() else [args.src]
@@ -21,11 +23,11 @@ def main(args):
 					bitmapDir = (args.extract / filePath.stem / Path(bitmap.filename).stem)
 				else:
 					bitmapDir = (args.extract / Path(bitmap.filename).stem)
-			for i, image in enumerate(bitmap.images):
+			for image in bitmap.images:
 				try:
 					bitmapDir.mkdir(parents=True, exist_ok=True)
 					if not args.dryrun:
-						image.save(bitmapDir / f"{i}.png")
+						image.save(bitmapDir / f"{image.imgNum}_{image.imgType}.png")
 				except AttributeError:
 					pass
 
