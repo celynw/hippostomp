@@ -114,14 +114,12 @@ class Image():
 
 	# ----------------------------------------------------------------------------------------------
 	def read_image(self):
-		with open(self.filePath, "rb") as f:
-			f.seek(self.offset)
-			image = [(0, 0, 0, 0)] * self.width * self.height
-			with open(self.filePath.with_suffix(".555"), "rb") as f2:
-				data_length = self.length + self.alpha_length
-				f2.seek(self.offset555 - self.flags[0])
-				buffer = f2.read(data_length)
-				# FIX in some C3 graphics, last image is 'missing' final 4 bytes
+		image = [(0, 0, 0, 0)] * self.width * self.height
+		with open(self.filePath.with_suffix(".555"), "rb") as f2:
+			data_length = self.length + self.alpha_length
+			f2.seek(self.offset555 - self.flags[0])
+			buffer = f2.read(data_length)
+			# FIX in some C3 graphics, last image is 'missing' final 4 bytes
 
 		self.image = PILImage.new("RGBA", (self.width, self.height))
 		if self.imgType == ImgType.plain:
