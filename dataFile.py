@@ -11,8 +11,9 @@ class DataFile():
 	headerSize = 680
 	bitmapRecordSize = 200
 	# ----------------------------------------------------------------------------------------------
-	def __init__(self, filePath, bitmapIDs=set()):
+	def __init__(self, filePath, combine, bitmapIDs=set()):
 		self.filePath = filePath
+		self.combine = combine
 		self.offset = 0
 		self.bitmaps = []
 
@@ -71,5 +72,5 @@ class DataFile():
 	# ----------------------------------------------------------------------------------------------
 	def read_images(self):
 		for bitmap in self.bitmaps:
-			bitmap.read_images(self.offset, self.version >= 0xd6)
+			bitmap.read_images(self.offset, self.version >= 0xd6, self.combine)
 			self.offset = bitmap.offset

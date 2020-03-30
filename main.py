@@ -15,7 +15,7 @@ def main(args):
 	for filePath in dataFiles:
 		info(f"Reading from {filePath.name}")
 		bitmapIDs = set()
-		dataFile = DataFile(filePath, bitmapIDs)
+		dataFile = DataFile(filePath, args.combine, bitmapIDs)
 		for bitmap in dataFile.bitmaps:
 			# TODO ignore system
 			if args.extract:
@@ -23,13 +23,14 @@ def main(args):
 					bitmapDir = (args.extract / filePath.stem / Path(bitmap.filename).stem)
 				else:
 					bitmapDir = (args.extract / Path(bitmap.filename).stem)
-			for image in bitmap.images:
-				try:
-					bitmapDir.mkdir(parents=True, exist_ok=True)
-					if not args.dryrun:
+			# TODO Bad form, different type returned depending on arguments
+			if not args.dryrun:
+				if args.combine:
+					bitmap.images.save(f"{bitmapDir}.png")
+				else:
+					for image in bitmap.images:
+						bitmapDir.mkdir(parents=True, exist_ok=True)
 						image.save(bitmapDir / f"{image.imgNum}_{image.imgType}.png")
-				except AttributeError:
-					pass
 
 
 # ==================================================================================================
@@ -39,6 +40,7 @@ def parse_args():
 	parser.add_argument("extract", metavar="OUT_DIR", help="Extract all images to this location")
 	parser.add_argument("-s", "--subdirs", action="store_true", help="Use subdirectories with original data file names")
 	parser.add_argument("-d", "--dryrun", action="store_true", help="Don't save anything")
+	parser.add_argument("-c", "--combine", action="store_true", help="Combine individual images back into their full bitmap")
 
 	args = parser.parse_args()
 	args.src = Path(args.src)
