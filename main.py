@@ -12,8 +12,8 @@ def main(args):
 	dataFiles = (args.src / "Data").glob("*.sg3") if args.src.resolve().is_dir() else [args.src]
 	for filePath in dataFiles:
 		info(f"Reading from {filePath.name}")
-		dataDir = (args.extract / filePath.stem)
-		dataFile = DataFile(filePath)
+		bitmapIDs = set()
+		dataFile = DataFile(filePath, bitmapIDs)
 		for bitmap in dataFile.bitmaps:
 			# TODO ignore system
 			if args.extract:

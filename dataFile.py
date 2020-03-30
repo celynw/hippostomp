@@ -11,13 +11,13 @@ class DataFile():
 	headerSize = 680
 	bitmapRecordSize = 200
 	# ----------------------------------------------------------------------------------------------
-	def __init__(self, filePath):
+	def __init__(self, filePath, bitmapIDs=set()):
 		self.filePath = filePath
 		self.offset = 0
 		self.bitmaps = []
 
 		self.read_header()
-		self.read_bitmaps()
+		self.read_bitmaps(bitmapIDs)
 		self.offset = self.headerSize + (self.get_max_bitmap_records() * self.bitmapRecordSize)
 		self.read_images()
 
@@ -59,12 +59,14 @@ class DataFile():
 			return 200 # SG3
 
 	# ----------------------------------------------------------------------------------------------
-	def read_bitmaps(self):
+	def read_bitmaps(self, bitmapIDs):
 		with open(self.filePath, "rb") as f:
 			f.seek(self.offset)
 			for i in range(self.numBitmapRecords):
 				bitmap = Bitmap(self.filePath, self.offset)
-				self.bitmaps.append(bitmap)
+				if bitmap.filename not in bitmapIDs:
+					self.bitmaps.append(bitmap)
+					bitmapIDs.add(bitmap.filename)
 				self.offset = bitmap.offset
 			assert(self.bitmaps[-1].endIndex == self.numImageRecords)
 
