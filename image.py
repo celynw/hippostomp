@@ -65,7 +65,7 @@ class Image():
 	# ----------------------------------------------------------------------------------------------
 	def __str__(self):
 		return textwrap.dedent(f"""
-		Bitmap #{self.bitmap_id} Image #{self.imgNum}: {self.imgType} {self.width}x{self.height}
+		Bitmap #{self.bitmapID} Image #{self.imgNum}: {self.imgType} {self.width}x{self.height}
 		""").strip()
 
 	# ----------------------------------------------------------------------------------------------
@@ -79,9 +79,9 @@ class Image():
 			f.seek(self.offset)
 			self.offset555 = int.from_bytes(f.read(4), byteorder="little")
 			self.length = int.from_bytes(f.read(4), byteorder="little")
-			self.uncompressed_length = int.from_bytes(f.read(4), byteorder="little")
+			self.uncompressedLength = int.from_bytes(f.read(4), byteorder="little")
 			f.seek(4, 1)
-			self.invert_offset = int.from_bytes(f.read(4), byteorder="little", signed=True)
+			self.invertOffset = int.from_bytes(f.read(4), byteorder="little", signed=True)
 			self.width = int.from_bytes(f.read(2), byteorder="little", signed=True)
 			self.height = int.from_bytes(f.read(2), byteorder="little", signed=True)
 			self.xOffset = int.from_bytes(f.read(2), byteorder="little")
@@ -89,14 +89,14 @@ class Image():
 			f.seek(22, 1)
 			self.imgType = get_img_type(int.from_bytes(f.read(2), byteorder="little"))
 			self.flags = f.read(4)
-			self.bitmap_id = int.from_bytes(f.read(1), byteorder="little")
+			self.bitmapID = int.from_bytes(f.read(1), byteorder="little")
 			f.seek(7, 1)
 
 			if self.includeAlpha:
-				self.alpha_offset = int.from_bytes(f.read(4), byteorder="little")
-				self.alpha_length = int.from_bytes(f.read(4), byteorder="little")
+				self.alphaOffset = int.from_bytes(f.read(4), byteorder="little")
+				self.alphaLength = int.from_bytes(f.read(4), byteorder="little")
 			else:
-				self.alpha_offset = self.alpha_length = 0
+				self.alphaOffset = self.alphaLength = 0
 
 			self.offset = f.tell()
 
@@ -126,9 +126,9 @@ class Image():
 
 		image = [(0, 0, 0, 0)] * self.width * self.height
 		with open(self.filePath.with_suffix(".555"), "rb") as f2:
-			data_length = self.length + self.alpha_length
+			dataLength = self.length + self.alphaLength
 			f2.seek(self.offset555 - self.flags[0])
-			buffer = f2.read(data_length)
+			buffer = f2.read(dataLength)
 			# FIX in some C3 graphics, last image is 'missing' final 4 bytes
 
 		self.image = PILImage.new("RGBA", (self.width, self.height))
@@ -142,7 +142,7 @@ class Image():
 		elif self.imgType == ImgType.isometric:
 			size = self.flags[3]
 			height = int((self.width + 2) / 2) # 58 -> 30, 118 -> 60, etc.
-			y_offset = self.height - height
+			yOffset = self.height - height
 			if size == 0:
 				# Derive the tile size from the height (more regular than width)
 				# Note that this causes a problem with 4x4 regular vs 3x3 large:
@@ -166,14 +166,14 @@ class Image():
 				return None
 
 			# Check if buffer length is enough: (width + 2) * height / 2 * 2bpp */
-			if (self.width + 2) * height != self.uncompressed_length:
+			if (self.width + 2) * height != self.uncompressedLength:
 				error("Data length doesn't match footprint size")
 				return None
 
 			i = 0
 			for y in range(size + (size - 1)):
-				x_offset = size - y - 1 if y < size else y - size + 1
-				x_offset *= tileHeight
+				xOffset = size - y - 1 if y < size else y - size + 1
+				xOffset *= tileHeight
 				wd = y + 1 if y < size else 2 * size - y - 1
 				for wdx in range(wd):
 					halfHeight = int(tileHeight / 2)
@@ -183,20 +183,20 @@ class Image():
 						end = tileWidth - start
 						for x in range(start, end):
 							pixel = self.set555Pixel((buffer[i + 1] << 8) | buffer[i], wd)
-							image[((y + y_offset) * self.width) + x_offset + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
+							image[((y + yOffset) * self.width) + xOffset + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
 							i += 2
 					for y in range(halfHeight, tileHeight):
 						start = 2 * y - tileHeight
 						end = tileWidth - start
 						for x in range(start, end):
 							pixel = self.set555Pixel((buffer[i + 1] << 8) | buffer[i], wd)
-							image[((y + y_offset) * self.width) + x_offset + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
+							image[((y + yOffset) * self.width) + xOffset + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
 							i += 2
-					x_offset += tileWidth + 2
+					xOffset += tileWidth + 2
 					i += 1
-				y_offset += int(tileHeight / 2)
-			i, x, y = self.uncompressed_length, 0, 0
-			while i < self.length - self.uncompressed_length:
+				yOffset += int(tileHeight / 2)
+			i, x, y = self.uncompressedLength, 0, 0
+			while i < self.length - self.uncompressedLength:
 				c = buffer[i]
 				i += 1
 				if c == 255:
