@@ -151,6 +151,8 @@ class Image():
 					size = int(height / self.isometricTileHeight)
 				elif height % self.isometricLargeTileHeight == 0:
 					size = int(height / self.isometricLargeTileHeight)
+				if size == 0:
+					error(f"Unknown isometric tile size: height = {height}")
 
 			# Determine whether we should use the regular or large (emperor) tiles
 			if self.isometricTileHeight * size == height:
@@ -162,12 +164,12 @@ class Image():
 				tileHeight = self.isometricLargeTileHeight
 				tileWidth = self.isometricLargeTileWidth
 			else:
-				error("Unknown tile size")
+				error(f"Unknown tile size: {height}x{self.width}, size = {size}")
 				return None
 
 			# Check if buffer length is enough: (width + 2) * height / 2 * 2bpp */
 			if (self.width + 2) * height != self.uncompressedLength:
-				error("Data length doesn't match footprint size")
+				error(f"Data length doesn't match footprint size: {(self.width + 2) * height} vs. {self.uncompressedLength}")
 				return None
 
 			i = 0
