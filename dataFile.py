@@ -20,7 +20,11 @@ class DataFile():
 		self.read_header()
 		self.read_bitmaps(bitmapIDs)
 		self.offset = self.headerSize + (self.get_max_bitmap_records() * self.bitmapRecordSize)
-		if not info:
+		if info:
+			print(self)
+			for bitmap in self.bitmaps:
+				print(bitmap)
+		else:
 			self.read_images()
 
 	# ----------------------------------------------------------------------------------------------
