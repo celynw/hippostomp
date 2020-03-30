@@ -11,7 +11,7 @@ class DataFile():
 	headerSize = 680
 	bitmapRecordSize = 200
 	# ----------------------------------------------------------------------------------------------
-	def __init__(self, filePath, combine, bitmapIDs=set()):
+	def __init__(self, filePath, combine, info=False, bitmapIDs=set()):
 		self.filePath = filePath
 		self.combine = combine
 		self.offset = 0
@@ -20,7 +20,8 @@ class DataFile():
 		self.read_header()
 		self.read_bitmaps(bitmapIDs)
 		self.offset = self.headerSize + (self.get_max_bitmap_records() * self.bitmapRecordSize)
-		self.read_images()
+		if not info:
+			self.read_images()
 
 	# ----------------------------------------------------------------------------------------------
 	def read_header(self):
