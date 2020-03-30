@@ -176,27 +176,13 @@ class Image():
 			for y in range(size + (size - 1)):
 				xOffset = size - y - 1 if y < size else y - size + 1
 				xOffset *= tileHeight
-				wd = y + 1 if y < size else 2 * size - y - 1
-				for wdx in range(wd):
-					halfHeight = int(tileHeight / 2)
-					x, y, i = 0, 0, 0
-					for y in range(halfHeight):
-						start = tileHeight - 2 * (y + 1)
-						end = tileWidth - start
-						for x in range(start, end):
-							pixel = self.set555Pixel((buffer[i + 1] << 8) | buffer[i], wd)
-							image[((y + yOffset) * self.width) + xOffset + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
-							i += 2
-					for y in range(halfHeight, tileHeight):
-						start = 2 * y - tileHeight
-						end = tileWidth - start
-						for x in range(start, end):
-							pixel = self.set555Pixel((buffer[i + 1] << 8) | buffer[i], wd)
-							image[((y + yOffset) * self.width) + xOffset + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
-							i += 2
+				wd = y + 1 if y < size else (2 * size) - y - 1
+				for x in enumerate(range(wd)):
+					self.writeIsometricTile(image, buffer[i * tileBytes:], xOffset, yOffset, tileWidth, tileHeight)
 					xOffset += tileWidth + 2
 					i += 1
 				yOffset += int(tileHeight / 2)
+			self.writeTransparentImage(image, buffer[self.uncompressedLength:], self.length - self.uncompressedLength)
 			i, x, y = self.uncompressedLength, 0, 0
 			while i < self.length - self.uncompressedLength:
 				c = buffer[i]
@@ -219,34 +205,63 @@ class Image():
 							x = 0
 						i += 2
 		elif self.imgType == ImgType.sprite:
-			i, x, y = 0, 0, 0
-			while i < self.length:
-				c = buffer[i] # uint8_t
-				i += 1
-				if c == 255:
-					# The next byte is the number of pixels to skip
-					x += buffer[i]
-					i += 1
-					while (x >= self.width):
-						y += 1
-						x -= self.width
-				else:
-					# c is the number of image data bytes
-					for j in range(c):
-						pixel = self.set555Pixel(buffer[i] | (buffer[i + 1] << 8), self.width)
-						image[(y * self.width) + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
-						x += 1
-						if x >= self.width:
-							y += 1
-							x = 0
-						i += 2
+			self.writeTransparentImage(image, buffer, self.length)
+
 		self.image.putdata(image)
+
+	# ----------------------------------------------------------------------------------------------
+	def writeIsometricTile(self, image, buffer, xOffset, yOffset, tileWidth, tileHeight):
+		halfHeight = int(tileHeight / 2)
+		x, y, i = 0, 0, 0
+		# TODO merge duplicate code
+		for y in range(halfHeight):
+			start = tileHeight - 2 * (y + 1)
+			end = tileWidth - start
+			for x in range(start, end):
+				# pixel = self.set555Pixel((buffer[(wdxi * tileBytes) + 1] << 8) | buffer[(wdxi * tileBytes)], wd)
+				pixel = self.set555Pixel((buffer[i + 1] << 8) | buffer[i], y)
+				image[((y + yOffset) * self.width) + xOffset + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
+				i += 2
+		for y in range(halfHeight, tileHeight):
+			start = 2 * y - tileHeight
+			end = tileWidth - start
+			for x in range(start, end):
+				# pixel = self.set555Pixel((buffer[(wdxi * tileBytes) + 1] << 8) | buffer[wdxi * tileBytes], wd)
+				pixel = self.set555Pixel((buffer[i + 1] << 8) | buffer[i], y)
+				image[((y + yOffset) * self.width) + xOffset + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
+				i += 2
+
+	# ----------------------------------------------------------------------------------------------
+	def writeTransparentImage(self, image, buffer, length):
+		i, x, y = 0, 0, 0
+		while i < length:
+			c = buffer[i]
+			i += 1
+			if c == 255:
+				# The next byte is the number of pixels to skip
+				x += buffer[i]
+				i += 1
+				while (x >= self.width):
+					y += 1
+					x -= self.width
+			else:
+				# c is the number of image data bytes
+				for j in range(c):
+					pixel = self.set555Pixel(buffer[i] | (buffer[i + 1] << 8), self.width)
+					image[(y * self.width) + x] = (pixel & 255, (pixel & 255 << 8) >> 8, (pixel & 255 << 16) >> 16, pixel >> 24)
+					# debug(f"Set {x}, {y}: {image[(y * self.width) + x]}")
+					x += 1
+					if x >= self.width:
+						y += 1
+						x = 0
+					i += 2
 
 	# ----------------------------------------------------------------------------------------------
 	def set555Pixel(self, colour, width):
 		rgba = 0xff000000 # Black
+		# TODO still problem with 'scafoling'
 		if colour == 0xf81f:
-			return 0x00000000 # Transparent
+			return rgba
 
 		# Red: 11-15 -> 4-8 | 13-15 -> 1-3
 		rgba |= ((colour & 0x7c00) >> 7) | ((colour & 0x7000) >> 12)
