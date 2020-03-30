@@ -17,7 +17,10 @@ def main(args):
 		for bitmap in dataFile.bitmaps:
 			# TODO ignore system
 			if args.extract:
-				bitmapDir = (dataDir / Path(bitmap.filename).stem)
+				if args.subdirs:
+					bitmapDir = (args.extract / filePath.stem / Path(bitmap.filename).stem)
+				else:
+					bitmapDir = (args.extract / Path(bitmap.filename).stem)
 			for i, image in enumerate(bitmap.images):
 				try:
 					bitmapDir.mkdir(parents=True, exist_ok=True)
@@ -32,6 +35,7 @@ def parse_args():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("src", metavar="SRC", help="Location of either the Pharaoh/Cleopatra root installation directory, or a specific `.sg3` file")
 	parser.add_argument("extract", metavar="OUT_DIR", help="Extract all images to this location")
+	parser.add_argument("-s", "--subdirs", action="store_true", help="Use subdirectories with original data file names")
 	parser.add_argument("-d", "--dryrun", action="store_true", help="Don't save anything")
 
 	args = parser.parse_args()
