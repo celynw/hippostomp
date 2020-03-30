@@ -42,14 +42,14 @@ class Image():
 	isometricLargeTileHeight = 40
 	isometricLargeTileBytes = 3200
 	# ----------------------------------------------------------------------------------------------
-	def __init__(self, filePath, offset, includeAlpha, imgNum):
+	def __init__(self, filePath, offset, includeAlpha, imgNum, isDummy=False):
 		self.filePath = filePath
 		self.offset = offset
 		self.includeAlpha = includeAlpha
 		self.imgNum = imgNum
 
 		self.read_header()
-		if not self.verify():
+		if not isDummy or not self.verify():
 			return None
 		self.read_image()
 

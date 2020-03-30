@@ -49,7 +49,7 @@ class Bitmap():
 	def read_images(self, offset, includeAlpha):
 		self.offset = offset
 		for i, record in enumerate(tqdm(range(self.numImages))):
-			image = Image(self.filePath, self.offset, includeAlpha, i)
-			if image and record != 0: # First one is always a dummy record
+			image = Image(self.filePath, self.offset, includeAlpha, i, isDummy=record != 0) # First is a dummy
+			if image:
 				self.images.append(image)
 			self.offset = image.offset
