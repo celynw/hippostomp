@@ -21,7 +21,8 @@ def main(args):
 			for i, image in enumerate(bitmap.images):
 				try:
 					bitmapDir.mkdir(parents=True, exist_ok=True)
-					image.save(bitmapDir / f"{i}.png")
+					if not args.dryrun:
+						image.save(bitmapDir / f"{i}.png")
 				except AttributeError:
 					pass
 
@@ -31,6 +32,7 @@ def parse_args():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("src", metavar="SRC", help="Location of either the Pharaoh/Cleopatra root installation directory, or a specific `.sg3` file")
 	parser.add_argument("extract", metavar="OUT_DIR", help="Extract all images to this location")
+	parser.add_argument("-d", "--dryrun", action="store_true", help="Don't save anything")
 
 	args = parser.parse_args()
 	args.src = Path(args.src)
