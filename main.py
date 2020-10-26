@@ -2,11 +2,9 @@
 import colored_traceback.auto
 import argparse
 from pathlib import Path
-
 from kellog import debug, info, warning, error
 
 from dataFile import DataFile
-
 from image import ImgType
 
 # ==================================================================================================

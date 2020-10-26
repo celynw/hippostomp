@@ -3,7 +3,6 @@ import colored_traceback.auto
 from tqdm import tqdm
 import textwrap
 from PIL import Image as PILImage
-
 from kellog import debug, info, warning, error
 
 from image import Image, ImageError
@@ -52,7 +51,7 @@ class Bitmap():
 		if combine:
 			self.images = PILImage.new("RGBA", (self.width, self.height))
 		for i, record in enumerate(tqdm(range(self.numImages))):
-			image = Image(self.filePath, self.offset, includeAlpha, i, isDummy=record == 0) # First is a dummy
+			image = Image(self.filePath, self.offset, includeAlpha, i)
 			self.offset = image.offset
 			try:
 				image.read_image()
@@ -60,5 +59,9 @@ class Bitmap():
 					self.images.paste(image.image, (image.xOffset, image.yOffset))
 				else:
 					self.images.append(image)
-			except ImageError:
+			except ImageError as e:
+				continue
+			except IndexError as e:
+				error("IndexError!")
+				print(e)
 				continue

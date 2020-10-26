@@ -20,6 +20,7 @@ class DataFile():
 		self.read_header()
 		self.read_bitmaps(bitmapIDs)
 		self.offset = self.headerSize + (self.get_max_bitmap_records() * self.bitmapRecordSize)
+		self.offset += (64 - 8)
 		if info:
 			print(self)
 			for bitmap in self.bitmaps:
@@ -72,7 +73,9 @@ class DataFile():
 				self.bitmaps.append(bitmap)
 				bitmapIDs.add(bitmap.filename)
 			self.offset = bitmap.offset
-		assert(self.bitmaps[-1].endIndex == self.numImageRecords)
+		# assert(self.bitmaps[-1].endIndex == self.numImageRecords)
+		if self.bitmaps[-1].endIndex != self.numImageRecords:
+			warning(f"endIndex ({self.bitmaps[-1].endIndex}) did not match numImageRecords ({self.numImageRecords})")
 
 	# ----------------------------------------------------------------------------------------------
 	def read_images(self):

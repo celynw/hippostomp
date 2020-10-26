@@ -49,12 +49,11 @@ class Image():
 	isometricLargeTileHeight = 40
 	isometricLargeTileBytes = 3200
 	# ----------------------------------------------------------------------------------------------
-	def __init__(self, filePath, offset, includeAlpha, imgNum, isDummy=False):
+	def __init__(self, filePath, offset, includeAlpha, imgNum):
 		self.filePath = filePath
 		self.offset = offset
 		self.includeAlpha = includeAlpha
 		self.imgNum = imgNum
-		self.isDummy = isDummy
 
 		self.read_header()
 
@@ -77,6 +76,8 @@ class Image():
 	def read_header(self):
 		with open(self.filePath, "rb") as f:
 			f.seek(self.offset)
+			self.bitmapID = int.from_bytes(f.read(1), byteorder="little")
+			f.seek(7, 1)
 			self.offset555 = int.from_bytes(f.read(4), byteorder="little")
 			self.length = int.from_bytes(f.read(4), byteorder="little")
 			self.uncompressedLength = int.from_bytes(f.read(4), byteorder="little")
@@ -89,8 +90,6 @@ class Image():
 			f.seek(22, 1)
 			self.imgType = get_img_type(int.from_bytes(f.read(2), byteorder="little"))
 			self.flags = f.read(4)
-			self.bitmapID = int.from_bytes(f.read(1), byteorder="little")
-			f.seek(7, 1)
 
 			if self.includeAlpha:
 				self.alphaOffset = int.from_bytes(f.read(4), byteorder="little")
@@ -121,7 +120,7 @@ class Image():
 
 	# ----------------------------------------------------------------------------------------------
 	def read_image(self):
-		if self.isDummy or not self.verify():
+		if not self.verify():
 			raise ImageError("Image verification failed")
 
 		image = [(0, 0, 0, 0)] * self.width * self.height
